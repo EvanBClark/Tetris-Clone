@@ -1,0 +1,49 @@
+p {
+    margin: 0;
+}
+
+table {
+
+    border-spacing: 0;
+    /* border-collapse: collapse;  Makes the borders collapse into each other */
+  }
+
+td {
+    width: 25px;
+    height: 25px;
+    padding: 0;
+    border: 1px solid;
+    border-color: rgb(78, 78, 78);
+}
+
+.block0 {
+    background-color: black;
+}
+
+.block1 {
+    background-color: cyan;
+}
+
+.block2 {
+    background-color: blue;
+}
+
+.block3 {
+    background-color: orange;
+}
+
+.block4 {
+    background-color: #FAFA33;
+}
+
+.block5 {
+    background-color: green;
+}
+
+.block6 {
+    background-color: purple;
+}
+
+.block7 {
+    background-color: red;
+}
