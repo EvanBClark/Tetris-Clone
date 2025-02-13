@@ -55,6 +55,12 @@ let lines = 0;
 let lockDown = false;
 let lockDownCount = 0;
 let gameOver = false;
+let lastAction = null;
+let exceptionKick = false;
+let comboCount = -1;
+let backToBack = -1;
+let perfectClearBackToBack = false;
+let messages = [];
 
 const keys = {
     'moveLeft': false,
@@ -128,7 +134,7 @@ function gameLoop(timestamp) {
         lockDownTime += deltaTime;
     }
 
-    if (lockDownTime >= 1000) {
+    if (lockDownTime >= 500) {
         lockDownTime = 0;
         lockDown = false;
         lockDownCount = 0;
@@ -139,6 +145,7 @@ function gameLoop(timestamp) {
     if (keys.moveLeft && lastMoveTime > 100) {
         if (moveDelay !== 1) {
             move('left');
+            // console.log(getDropPreview());
         }
         lastMoveTime = 0;
         moveDelay++;
@@ -146,6 +153,7 @@ function gameLoop(timestamp) {
     if (keys.moveRight && lastMoveTime > 100) {
         if (moveDelay !== 1) {
             move('right');
+            // console.log(getDropPreview());
         }
         lastMoveTime = 0;
         moveDelay++;
@@ -193,6 +201,7 @@ function dropBlock() {
     clearBlock();
     blockCoord[0]++;
     addBlock();
+    lastAction = 'drop';
 }
 
 function canBlockDrop() {
@@ -261,6 +270,7 @@ function spawnBlock() {
     if (nextBlocks.length < 7) {
         pickNextBlocks();
     }
+    // console.log(getDropPreview());
 }
 
 function rotate(direction) {
@@ -329,6 +339,7 @@ function rotate(direction) {
         }
     }
 
+    exceptionKick = true;
     const oldRotation = blockRotation;
     blockRotation = newRotation;
     for (let i = 0; i < kick.length; i++) {
@@ -342,9 +353,14 @@ function rotate(direction) {
                 lockDownCount++;
                 lockDownTime = 0;
             }
+            if (i !== 4) {
+                exceptionKick = false;
+            }
+            lastAction = 'rotate';
             return;
         }
     }
+    exceptionKick = false;
     blockRotation = oldRotation;
     addBlock();
 }
@@ -426,6 +442,7 @@ function move(direction) {
             lockDownCount++;
             lockDownTime = 0;
         }
+        lastAction = 'move';
     }
     addBlock();
 }
@@ -454,6 +471,31 @@ function fullDrop() {
 function clearLines() {
     let linesCleared = 0;
     let points = 0;
+    let tSpin = false;
+    let mini = true;
+    let cornerCount = 0;
+    let filledCorners = [false, false, false, false];
+    const corners = [[0, 0], [0, 2], [2, 0], [2, 2]];
+    if (currentBlock === 6 && lastAction === 'rotate') {
+        for (i = 0; i < corners.length; i++) {
+            if (blockCoord[0] + corners[i][0] >= board.length || blockCoord[1] + corners[i][1] < 0 || blockCoord[1] + corners[i][1] > 9 || board[blockCoord[0] + corners[i][0]][blockCoord[1] + corners[i][1]] !== 0) {
+                cornerCount++;
+                filledCorners[i] = true;
+            }
+        }
+    }
+    if (cornerCount >= 3) {
+        tSpin = true;
+        if (blockRotation === 0 && filledCorners[0] && filledCorners[1]) {
+            mini = false;
+        } else if (blockRotation === 1 && filledCorners[1] && filledCorners[3]) {
+            mini = false;
+        } else if (blockRotation === 2 && filledCorners[2] && filledCorners[3]) {
+            mini = false;
+        } else if (blockRotation === 3 && filledCorners[0] && filledCorners[2]) {
+            mini = false;
+        }
+    }
     for (let i = 0; i < board.length; i++) {
         let lineFull = true;
         for (let k = 0; k < board[i].length; k++) {
@@ -467,19 +509,160 @@ function clearLines() {
             board.splice(0, 0, Array.from({ length: 10 }, () => 0));
         }
     }
-    if (linesCleared === 1) {
-        points = 100;
-    } else if (linesCleared === 2) {
-        points = 300;
-    } else if (linesCleared === 3) {
-        points = 500;
-    } else if (linesCleared === 4) {
-        points = 800;
+    if (exceptionKick && linesCleared > 0) {
+        mini = false;
+    }
+    comboCount++;
+    if (tSpin) {
+        backToBack++;
+        if (mini) {
+            if (linesCleared === 0) {
+                points = 100 * level;
+                messages = ['Mini T-Spin'];
+                comboCount = -1;
+            } else if (linesCleared === 1) {
+                points = 200 * level;
+                messages = ['Mini T-Spin Single'];
+            } else if (linesCleared === 2) {
+                points = 400 * level;
+                messages = ['Mini T-Spin Double'];
+            }
+        } else {
+            if (linesCleared === 0) {
+                points = 400 * level;
+                messages = ['T-Spin'];
+                comboCount = -1;
+            } else if (linesCleared === 1) {
+                points = 800 * level;
+                messages = ['T-Spin Single'];
+            } else if (linesCleared === 2) {
+                points = 1200 * level;
+                messages = ['T-Spin Double'];
+            } else if (linesCleared === 3) {
+                points = 1600 * level;
+                messages = ['T-Spin Triple'];
+            }
+        }
+    } else {
+        if (linesCleared === 0) {
+            comboCount = -1;
+        } else if (linesCleared === 1) {
+            points = 100 * level;
+            messages = ['Single'];
+            backToBack = -1;
+        } else if (linesCleared === 2) {
+            points = 300 * level;
+            messages = ['Double'];
+            backToBack = -1;
+        } else if (linesCleared === 3) {
+            points = 500 * level;
+            messages = ['Triple'];
+            backToBack = -1;
+        } else if (linesCleared === 4) {
+            points = 800 * level;
+            messages = ['Tetris'];
+            backToBack++;
+        }
+    }
+    if (linesCleared > 0 && backToBack > 0) {
+        points *= 1.5;
+        messages.push('Back-to-Back');
+    }
+    if (comboCount > 0) {
+        points += 50 * comboCount * level;
+        messages.push('Combo ' + comboCount);
+    }
+    if (linesCleared > 0) {
+        perfectClear = true;
+        for (let i = 0; i < board.length; i++) {
+            for (let k = 0; k < board[i].length; k++) {
+                if (board[i][k] !== 0) {
+                    perfectClear = false;
+                }
+            }
+        }
+        if (perfectClear) {
+            messages.push('Perfect Clear');
+            if (linesCleared === 1) {
+                points += 800 * level;
+            } else if (linesCleared === 2) {
+                points += 1200 * level;
+            } else if (linesCleared === 3) {
+                points += 1800 * level;
+            }  else if (linesCleared === 4) {
+                if (perfectClearBackToBack) {
+                    points += 3200 * level;
+                } else {
+                    points += 2000 * level;
+                }
+            }
+            perfectClearBackToBack = true;
+        } else {
+            perfectClearBackToBack = false;
+        }
+    }
+    if (points > 0) {
+        messages.push('+' + points);
     }
     lines += linesCleared;
     score += points;
     level = Math.trunc(lines / 10) + 1;
     dropRate = Math.pow((0.8 - ((level - 1) * 0.007)), (level - 1)) * 1000;
+}
+
+
+
+function getDropPreview() {
+    const previewBoard = board.map(row => [...row]);
+    const previewCoord = [...blockCoord];
+
+    const block = blocks[currentBlock - 1][blockRotation];
+    for (let h = 0; h < previewBoard.length; h++) {
+        // console.log(previewBoard)
+        
+        for (let i = 0; i < block.length; i++) {
+            for (let k = 0; k < block[i].length; k++) {
+                if (block[i][k] !== 0) {
+                    // console.log(previewBoard[i + previewCoord[0]][k + previewCoord[1]])
+                    previewBoard[i + previewCoord[0]][k + previewCoord[1]] = 0;
+                    // console.log(previewBoard[i + previewCoord[0]][k + previewCoord[1]])
+                }
+            }
+        }
+
+        // console.log(previewBoard)
+
+        previewCoord[0]++;
+
+        for (let i = 0; i < block.length; i++) {
+            for (let k = 0; k < block[i].length; k++) {
+                // console.log(i + previewCoord[0])
+                // console.log(k + previewCoord[1])
+                // console.log(previewBoard[i + previewCoord[0]][k + previewCoord[1]])
+                if (i + previewCoord[0] >= 23 || (block[i][k] !== 0 && previewBoard[i + previewCoord[0]][k + previewCoord[1]] !== 0)) {
+                    previewCoord[0]--;
+                }
+            }
+        }
+    }
+
+    for (let i = 0; i < block.length; i++) {
+        for (let k = 0; k < block[i].length; k++) {
+            if (block[i][k] !== 0) {
+                previewBoard[i + previewCoord[0]][k + previewCoord[1]] = block[i][k] + 7;
+            }
+        }
+    }
+
+    for (let i = 0; i < block.length; i++) {
+        for (let k = 0; k < block[i].length; k++) {
+            if (block[i][k] !== 0) {
+                previewBoard[i + blockCoord[0]][k + blockCoord[1]] = block[i][k];
+            }
+        }
+    }
+
+    return previewBoard;
 }
 
 
@@ -495,16 +678,15 @@ function clearLines() {
 
 
 
-
-
-
 document.addEventListener('keydown', (event) => {
-    if (event.key === 'z' && !keys.rotateLeft) {
+    if ((event.key === 'z' || event.key === 'Z') && !keys.rotateLeft) {
         keys.rotateLeft = true;
         rotate('left');
-    } else if (event.key === 'x' && !keys.rotateRight) {
+        // console.log(getDropPreview());
+    } else if ((event.key === 'x' || event.key === 'X') && !keys.rotateRight) {
         keys.rotateRight = true;
         rotate('right');
+        // console.log(getDropPreview());
     } else if (event.key === 'ArrowLeft') {
         keys.moveLeft = true;
     } else if (event.key === 'ArrowRight') {
@@ -514,15 +696,15 @@ document.addEventListener('keydown', (event) => {
     } else if (event.key === ' ' && !keys.fullDrop) {
         keys.fullDrop = true;
         fullDrop();
-    } else if (event.key === 'c') {
+    } else if (event.key === 'c' || event.key === 'C') {
         keys.hold = true;
     }
 })
 
 document.addEventListener('keyup', (event) => {
-    if (event.key === 'z') {
+    if (event.key === 'z' || event.key === 'Z') {
         keys.rotateLeft = false;
-    } else if (event.key === 'x') {
+    } else if (event.key === 'x' || event.key === 'X') {
         keys.rotateRight = false;
     } else if (event.key === 'ArrowLeft') {
         keys.moveLeft = false;
@@ -534,16 +716,13 @@ document.addEventListener('keyup', (event) => {
         keys.moveDown = false;
     } else if (event.key === ' ') {
         keys.fullDrop = false;
-    } else if (event.key === 'c') {
+    } else if (event.key === 'c' || event.key === 'C') {
         keys.hold = false;
     }
 })
 
-document.addEventListener('DOMContentLoaded', function () {
-    // drawGame();
-});
-
 function drawGame() {
+    const previewBoard = getDropPreview();
     const game = document.getElementById('game');
     game.innerHTML = '';
     const levelP = document.createElement('p');
@@ -559,21 +738,24 @@ function drawGame() {
     holdP.innerHTML = 'Hold: ' + convert(holdBlock);
     game.append(holdP);
     const p = document.createElement('p');
-    p.innerHTML = 'Next Blocks: '
+    p.innerHTML = 'Next: '
     for (let i = 0; i < nextBlocks.length; i++) {
         p.innerHTML += convert(nextBlocks[i]) + ' ';
     }
     game.append(p);
+    const messagesP = document.createElement('p');
+    messagesP.innerHTML = 'Messages: ' + messages;
+    game.append(messagesP);
     const boardDiv = document.createElement('div');
     const top = document.createElement('div');
     const viewable = document.createElement('div');
     const topTable = document.createElement('table');
     const viewableTable = document.createElement('table');
-    for (let i = 3; i < board.length; i++) {
+    for (let i = 3; i < previewBoard.length; i++) {
         const tr = document.createElement('tr');
-        for (let k = 0; k < board[i].length; k++) {
+        for (let k = 0; k < previewBoard[i].length; k++) {
             const td = document.createElement('td');
-            td.classList.add('block' + board[i][k])
+            td.classList.add('block' + previewBoard[i][k])
             if (i < 3) {
                 td.style.backgroundColor = 'grey'
             }

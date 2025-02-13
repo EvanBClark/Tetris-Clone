@@ -47,3 +47,80 @@ td {
 .block7 {
     background-color: red;
 }
+
+.block8 {
+    background: 
+    linear-gradient(to right, cyan 2px, transparent 2px) top, /* Top edge */
+    linear-gradient(to left, cyan 2px, transparent 2px) bottom, /* Bottom edge */
+    linear-gradient(to bottom, cyan 2px, transparent 2px) left, /* Left edge */
+    linear-gradient(to top, cyan 2px, transparent 2px) right, /* Right edge */
+    black; /* Main background color */
+    background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%; /* Ensures full coverage */
+    background-repeat: no-repeat;
+}
+
+.block9 {
+    background: 
+    linear-gradient(to right, blue 2px, transparent 2px) top, /* Top edge */
+    linear-gradient(to left, blue 2px, transparent 2px) bottom, /* Bottom edge */
+    linear-gradient(to bottom, blue 2px, transparent 2px) left, /* Left edge */
+    linear-gradient(to top, blue 2px, transparent 2px) right, /* Right edge */
+    black; /* Main background color */
+    background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%; /* Ensures full coverage */
+    background-repeat: no-repeat;
+}
+
+.block10 {
+    background: 
+    linear-gradient(to right, orange 2px, transparent 2px) top, /* Top edge */
+    linear-gradient(to left, orange 2px, transparent 2px) bottom, /* Bottom edge */
+    linear-gradient(to bottom, orange 2px, transparent 2px) left, /* Left edge */
+    linear-gradient(to top, orange 2px, transparent 2px) right, /* Right edge */
+    black; /* Main background color */
+    background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%; /* Ensures full coverage */
+    background-repeat: no-repeat;
+}
+
+.block11 {
+    background: 
+    linear-gradient(to right, #FAFA33 2px, transparent 2px) top, /* Top edge */
+    linear-gradient(to left, #FAFA33 2px, transparent 2px) bottom, /* Bottom edge */
+    linear-gradient(to bottom, #FAFA33 2px, transparent 2px) left, /* Left edge */
+    linear-gradient(to top, #FAFA33 2px, transparent 2px) right, /* Right edge */
+    black; /* Main background color */
+    background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%; /* Ensures full coverage */
+    background-repeat: no-repeat;
+}
+
+.block12 {
+    background: 
+    linear-gradient(to right, green 2px, transparent 2px) top, /* Top edge */
+    linear-gradient(to left, green 2px, transparent 2px) bottom, /* Bottom edge */
+    linear-gradient(to bottom, green 2px, transparent 2px) left, /* Left edge */
+    linear-gradient(to top, green 2px, transparent 2px) right, /* Right edge */
+    black; /* Main background color */
+    background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%; /* Ensures full coverage */
+    background-repeat: no-repeat;
+}
+
+.block13 {
+    background: 
+    linear-gradient(to right, purple 2px, transparent 2px) top, /* Top edge */
+    linear-gradient(to left, purple 2px, transparent 2px) bottom, /* Bottom edge */
+    linear-gradient(to bottom, purple 2px, transparent 2px) left, /* Left edge */
+    linear-gradient(to top, purple 2px, transparent 2px) right, /* Right edge */
+    black; /* Main background color */
+    background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%; /* Ensures full coverage */
+    background-repeat: no-repeat;
+}
+
+.block14 {
+    background: 
+    linear-gradient(to right, red 2px, transparent 2px) top, /* Top edge */
+    linear-gradient(to left, red 2px, transparent 2px) bottom, /* Bottom edge */
+    linear-gradient(to bottom, red 2px, transparent 2px) left, /* Left edge */
+    linear-gradient(to top, red 2px, transparent 2px) right, /* Right edge */
+    black; /* Main background color */
+    background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%; /* Ensures full coverage */
+    background-repeat: no-repeat;
+}
