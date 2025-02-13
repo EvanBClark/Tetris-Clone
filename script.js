@@ -610,42 +610,27 @@ function clearLines() {
     dropRate = Math.pow((0.8 - ((level - 1) * 0.007)), (level - 1)) * 1000;
 }
 
-
-
 function getDropPreview() {
     const previewBoard = board.map(row => [...row]);
     const previewCoord = [...blockCoord];
-
     const block = blocks[currentBlock - 1][blockRotation];
     for (let h = 0; h < previewBoard.length; h++) {
-        // console.log(previewBoard)
-        
         for (let i = 0; i < block.length; i++) {
             for (let k = 0; k < block[i].length; k++) {
                 if (block[i][k] !== 0) {
-                    // console.log(previewBoard[i + previewCoord[0]][k + previewCoord[1]])
                     previewBoard[i + previewCoord[0]][k + previewCoord[1]] = 0;
-                    // console.log(previewBoard[i + previewCoord[0]][k + previewCoord[1]])
                 }
             }
         }
-
-        // console.log(previewBoard)
-
         previewCoord[0]++;
-
         for (let i = 0; i < block.length; i++) {
             for (let k = 0; k < block[i].length; k++) {
-                // console.log(i + previewCoord[0])
-                // console.log(k + previewCoord[1])
-                // console.log(previewBoard[i + previewCoord[0]][k + previewCoord[1]])
                 if (i + previewCoord[0] >= 23 || (block[i][k] !== 0 && previewBoard[i + previewCoord[0]][k + previewCoord[1]] !== 0)) {
                     previewCoord[0]--;
                 }
             }
         }
     }
-
     for (let i = 0; i < block.length; i++) {
         for (let k = 0; k < block[i].length; k++) {
             if (block[i][k] !== 0) {
@@ -653,7 +638,6 @@ function getDropPreview() {
             }
         }
     }
-
     for (let i = 0; i < block.length; i++) {
         for (let k = 0; k < block[i].length; k++) {
             if (block[i][k] !== 0) {
@@ -661,7 +645,6 @@ function getDropPreview() {
             }
         }
     }
-
     return previewBoard;
 }
 
