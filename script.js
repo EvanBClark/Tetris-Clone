@@ -49,7 +49,7 @@ let holdBlock = 0;
 let canHold = true;
 let blockCoord = [0, 0]; // row, col
 let blockRotation = 0;
-let level = 0;
+let level = 1;
 let score = 0;
 let lines = 0;
 let lockDown = false;
@@ -61,7 +61,15 @@ let comboCount = -1;
 let backToBack = -1;
 let perfectClearBackToBack = false;
 let messages = [];
-
+let drawnMessages = [];
+let moveDelay = 0;
+let fpsTime = 0;
+let dropTime = 0;
+let lockDownTime = 0;
+let lastMoveTime = 0;
+const fps = 60;
+const interval = 1000 / fps;
+let dropRate = 1000;
 const keys = {
     'moveLeft': false,
     'moveRight': false,
@@ -71,15 +79,10 @@ const keys = {
     'fullDrop' : false,
     'hold' : false,
 }
-let moveDelay = 0;
 
-let fpsTime = 0;
-let dropTime = 0;
-let lockDownTime = 0;
-let lastMoveTime = 0;
-const fps = 60;
-const interval = 1000 / fps;
-let dropRate = 1000;
+startGame();
+
+requestAnimationFrame(gameLoop);
 
 function gameLoop(timestamp) {
     const deltaTime = timestamp - fpsTime;
@@ -182,10 +185,6 @@ function gameLoop(timestamp) {
         requestAnimationFrame(gameLoop);
     }
 }
-
-requestAnimationFrame(gameLoop);
-
-startGame();
 
 function startGame() {
     pickNextBlocks();
@@ -476,6 +475,7 @@ function clearLines() {
     let cornerCount = 0;
     let filledCorners = [false, false, false, false];
     const corners = [[0, 0], [0, 2], [2, 0], [2, 2]];
+    let lineClearY = 0;
     if (currentBlock === 6 && lastAction === 'rotate') {
         for (i = 0; i < corners.length; i++) {
             if (blockCoord[0] + corners[i][0] >= board.length || blockCoord[1] + corners[i][1] < 0 || blockCoord[1] + corners[i][1] > 9 || board[blockCoord[0] + corners[i][0]][blockCoord[1] + corners[i][1]] !== 0) {
@@ -504,6 +504,7 @@ function clearLines() {
             }
         }
         if (lineFull) {
+            lineClearY = i - 3;
             linesCleared++;
             board.splice(i, 1);
             board.splice(0, 0, Array.from({ length: 10 }, () => 0));
@@ -604,6 +605,9 @@ function clearLines() {
     if (points > 0) {
         messages.push('+' + points);
     }
+    if (linesCleared > 0) {
+        messages.push(lineClearY);
+    }
     lines += linesCleared;
     score += points;
     level = Math.trunc(lines / 10) + 1;
@@ -648,28 +652,13 @@ function getDropPreview() {
     return previewBoard;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 document.addEventListener('keydown', (event) => {
     if ((event.key === 'z' || event.key === 'Z') && !keys.rotateLeft) {
         keys.rotateLeft = true;
         rotate('left');
-        // console.log(getDropPreview());
     } else if ((event.key === 'x' || event.key === 'X') && !keys.rotateRight) {
         keys.rotateRight = true;
         rotate('right');
-        // console.log(getDropPreview());
     } else if (event.key === 'ArrowLeft') {
         keys.moveLeft = true;
     } else if (event.key === 'ArrowRight') {
@@ -706,73 +695,148 @@ document.addEventListener('keyup', (event) => {
 
 function drawGame() {
     const previewBoard = getDropPreview();
-    const game = document.getElementById('game');
-    game.innerHTML = '';
-    const levelP = document.createElement('p');
-    levelP.innerHTML = 'Level: ' + level;
-    game.append(levelP);
-    const scoreP = document.createElement('p');
-    scoreP.innerHTML = 'Score: ' + score;
-    game.append(scoreP);
-    const linesP = document.createElement('p');
-    linesP.innerHTML = 'Lines: ' + lines;
-    game.append(linesP);
-    const holdP = document.createElement('p');
-    holdP.innerHTML = 'Hold: ' + convert(holdBlock);
-    game.append(holdP);
-    const p = document.createElement('p');
-    p.innerHTML = 'Next: '
-    for (let i = 0; i < nextBlocks.length; i++) {
-        p.innerHTML += convert(nextBlocks[i]) + ' ';
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    let gameWidth;
+    if (width > height) {
+        gameWidth = height;
+    } else {
+        gameWidth = width;
     }
-    game.append(p);
-    const messagesP = document.createElement('p');
-    messagesP.innerHTML = 'Messages: ' + messages;
-    game.append(messagesP);
-    const boardDiv = document.createElement('div');
-    const top = document.createElement('div');
-    const viewable = document.createElement('div');
-    const topTable = document.createElement('table');
-    const viewableTable = document.createElement('table');
+    const gameHeight = gameWidth;
+    const tileHeight = gameWidth / 23;
+    const borderWidth = gameHeight / 400;
+    const game = document.getElementById('game');
+    game.style.height = gameHeight + 'px';
+    game.style.width = gameWidth + 'px';
+    const table = document.getElementById('board-table');
+    table.innerHTML = '';
     for (let i = 3; i < previewBoard.length; i++) {
         const tr = document.createElement('tr');
         for (let k = 0; k < previewBoard[i].length; k++) {
             const td = document.createElement('td');
             td.classList.add('block' + previewBoard[i][k])
-            if (i < 3) {
-                td.style.backgroundColor = 'grey'
+            td.style.height = tileHeight + 'px';
+            td.style.width = tileHeight + 'px';
+            td.style.border = borderWidth  + 'px solid';
+            td.style.borderColor = 'rgb(59, 59, 59)';
+            tr.append(td);
+        }
+        table.append(tr);
+    }
+    const leftColumn = document.getElementById('left-column');
+    leftColumn.style.height = gameHeight * .9 + 'px';
+    leftColumn.style.width = gameWidth / 3.7 + 'px';
+    const next = document.getElementById('next');
+    next.style.height = gameHeight * .9 + 'px';
+    next.style.width = gameWidth / 3.7 + 'px';
+    const holdTable = document.getElementById('hold-table');
+    holdTable.innerHTML = '';
+    holdTable.style.transform = '';
+    let block;
+    let extraSpacing = 0;
+    if (holdBlock === 0) {
+        block = [[0], [0]];
+        extraSpacing = gameHeight / 400 * 3;
+    } else {
+        block = blocks[holdBlock - 1][0];
+    }
+
+    if (holdBlock === 1) {
+        block[0] = [0];
+        extraSpacing = gameHeight / 400;
+    }
+    drawBlock(holdTable, block, gameHeight, tileHeight); 
+    const nextTables = document.getElementById('next-tables');
+    nextTables.innerHTML = '';
+    for (let i = 0; i < 3; i++) {
+        const nextTable = document.createElement('table');
+        nextTable.classList.add('center');
+        nextTable.style.marginBottom = tileHeight + 'px';
+        nextTables.append(nextTable);
+        block = blocks[nextBlocks[i] - 1][0];
+        if (nextBlocks[i] === 1) {
+            block[0] = [0];
+        }
+        drawBlock(nextTable, block, gameHeight, tileHeight)
+    }
+    const colors = ['cyan', 'blue', 'orange', '#FAFA33', 'green', 'purple', 'red'];
+    const w = tileHeight / 12;
+    for (let i = 0; i < 7; i++) {
+        const outline = 'linear-gradient(to right, ' + colors[i] + ' ' + w + 'px, transparent ' + w + 'px) top,' +
+        'linear-gradient(to left, ' + colors[i] + ' ' + w + 'px, transparent ' + w + 'px) bottom,' +
+        'linear-gradient(to bottom, ' + colors[i] + ' ' + w + 'px, transparent ' + w + 'px) left,' +
+        'linear-gradient(to top, ' + colors[i] + ' ' + w + 'px, transparent ' + w + 'px) right,' + 'black';
+        document.querySelectorAll('.block' + (i + 8)).forEach(elem => elem.style.background = outline);
+    }
+
+    document.querySelectorAll('p').forEach(p => p.style.fontSize = gameHeight / 20 + 'px');
+    document.getElementById('hold-label').style.marginBottom = gameHeight / 40 + 'px';
+    document.getElementById('next-label').style.marginBottom = gameHeight / 40 + 'px';
+    document.getElementById('hold-div').style.marginBottom = (gameHeight / 40 + extraSpacing) + 'px';
+    document.getElementById('score-div').style.marginBottom = gameHeight / 40 + 'px';
+    document.getElementById('level-div').style.marginBottom = gameHeight / 40 + 'px';
+    document.getElementById('score').innerText = score.toLocaleString();
+    document.getElementById('level').innerText = level;
+    document.getElementById('lines').innerText = lines;
+
+    if (messages.length > 0) {
+        const drawnMessage = [0]
+        for (let i = 0; i < messages.length; i++) {
+            drawnMessage.push(messages[i]);
+        }
+        drawnMessages.push(drawnMessage)
+        messages = [];
+    }
+    document.querySelectorAll('.message').forEach(elem => elem.remove());
+    for (let i = 0; i < drawnMessages.length; i++) {
+        const messagesDiv = document.createElement('div');
+        messagesDiv.style.position = 'fixed';
+        messagesDiv.classList.add('message');
+        messageY = (10 - drawnMessages[i][drawnMessages[i].length - 1]) * (tileHeight + borderWidth);
+        messagesDiv.style.bottom = (window.innerHeight / 2) + messageY + 'px';
+        for (let k = 1; k < drawnMessages[i].length - 1; k++) {
+            const p = document.createElement('p');
+            p.innerText = drawnMessages[i][k];
+            p.style.fontSize = gameHeight / 30 + 'px';
+            if (drawnMessages[i][0] < 10) {
+                p.style.opacity = drawnMessages[i][0] / 10;
+                p.style.fontSize = (gameHeight / 30 * (drawnMessages[i][0] / 10)) + 'px';
+            } else if (drawnMessages[i][0] > 20) {
+                p.style.opacity = (30 - drawnMessages[i][0]) / 10;
+            }
+            p.style.transform = 'translateY(-' + (drawnMessages[i][0] * 4) + 'px)';
+            messagesDiv.append(p);
+        }
+        document.getElementById('game').append(messagesDiv);
+        drawnMessages[i][0]++;
+        if (drawnMessages[i][0] > 30) {
+            drawnMessages.splice(i, 1);
+            i--;
+        }
+    }
+}
+
+function drawBlock(table, block, gameHeight, tileHeight) {
+    for (let i = 0; i < block.length; i++) {
+        const tr = document.createElement('tr');
+        for (let k = 0; k < block[i].length; k++) {
+            const td = document.createElement('td');
+            td.style.height = tileHeight + 'px';
+            td.style.width = tileHeight + 'px';
+            if (block[i][k] !== 0) {
+                td.classList.add('block' + block[i][k])
+                td.style.border = gameHeight / 400  + 'px solid';
+                td.style.borderColor = 'rgb(59, 59, 59)';
+            }
+            if (block[i][k] === 1) {
+                table.style.transform = 'translateY(-' + (tileHeight / 2) + 'px)';
+            }
+            else if (block[i][k] === 4) {
+                table.style.transform = 'translateX(-' + (tileHeight / 2) + 'px)';
             }
             tr.append(td);
         }
-        if (i < 3) {
-            topTable.append(tr);
-        } else {
-            viewableTable.append(tr);
-        }
-    }
-    top.append(topTable);
-    viewable.append(viewableTable);
-    boardDiv.append(top);
-    boardDiv.append(viewable);
-    game.append(boardDiv);
-}
-
-function convert(b) {
-    if (b === 1) {
-        return 'I ';
-    } else if (b === 2) {
-        return 'J ';
-    } else if (b === 3) {
-        return 'L ';
-    } else if (b === 4) {
-        return 'O ';
-    } else if (b === 5) {
-        return 'S ';
-    } else if (b === 6) {
-        return 'T ';
-    } else if (b === 7) {
-        return 'Z ';
-    } else {
-        return b;
+        table.append(tr);
     }
 }
