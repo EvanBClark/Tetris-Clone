@@ -702,9 +702,29 @@ function drawGame() {
     } else {
         gameWidth = width;
     }
-    const gameHeight = gameWidth;
-    const tileHeight = gameWidth / 23;
+    let gameHeight = gameWidth;
+    let tileHeight = gameWidth / 23;
     const borderWidth = gameHeight / 400;
+
+    let verticalDisplay = false;
+    if (window.innerHeight > window.innerWidth * 1.45) {
+        verticalDisplay = true;
+        // document.getElementById('left-column').style.order = 3;
+        document.getElementById('next').append(document.getElementById('hold-div'));
+        document.getElementById('next').append(document.getElementById('stats'));
+        document.getElementById('left-column').style.display = 'none';
+        document.getElementById('board').style.marginLeft = tileHeight / 3 + 'px';
+        tileHeight = gameWidth / 14.6;
+        gameHeight = gameHeight * 1.4;
+    } else {
+        document.getElementById('left-column').append(document.getElementById('hold-div'));
+        document.getElementById('left-column').append(document.getElementById('stats'));
+        document.getElementById('left-column').style.display = 'block';
+        document.getElementById('board').style.marginLeft = 0;
+    }
+
+
+
     const game = document.getElementById('game');
     game.style.height = gameHeight + 'px';
     game.style.width = gameWidth + 'px';
@@ -730,6 +750,16 @@ function drawGame() {
     const next = document.getElementById('next');
     next.style.height = gameHeight * .9 + 'px';
     next.style.width = gameWidth / 3.7 + 'px';
+
+
+    if (verticalDisplay) {
+        next.style.height = gameHeight * .98 + 'px';
+        gameHeight = gameWidth;
+        tileHeight = gameWidth / 23;
+    }
+    
+
+
     const holdTableDiv = document.getElementById('hold-table-div');
     roundMarginify(holdTableDiv, tileHeight);
     holdTableDiv.style.height = holdTableDiv.clientWidth + 'px';
@@ -737,16 +767,13 @@ function drawGame() {
     holdTable.innerHTML = '';
     holdTable.style.transform = '';
     let block;
-    let extraSpacing = 0;
     if (holdBlock === 0) {
         block = [[0], [0]];
-        extraSpacing = gameHeight / 400 * 3;
     } else {
         block = blocks[holdBlock - 1][0];
     }
     if (holdBlock === 1) {
         block[0] = [0];
-        extraSpacing = gameHeight / 400;
     }
     drawBlock(holdTable, block, gameHeight, tileHeight); 
     const nextTables = document.getElementById('next-tables');
@@ -782,7 +809,8 @@ function drawGame() {
     document.querySelectorAll('p').forEach(p => p.style.fontSize = gameHeight / 20 + 'px');
     document.getElementById('hold-label').style.marginBottom = gameHeight / 100 + 'px';
     document.getElementById('next-label').style.marginBottom = gameHeight / 100 + 'px';
-    document.getElementById('hold-div').style.marginBottom = (gameHeight / 40 + extraSpacing) + 'px';
+    document.getElementById('next-tables').style.marginBottom = gameHeight / 40 + 'px';
+    document.getElementById('hold-div').style.marginBottom = gameHeight / 40 + 'px';
     document.getElementById('score-div').style.marginBottom = gameHeight / 40 + 'px';
     document.getElementById('level-div').style.marginBottom = gameHeight / 40 + 'px';
     const scoreElem = document.getElementById('score');
@@ -836,6 +864,18 @@ function drawGame() {
             i--;
         }
     }
+    const blockClasses = ['.block1', '.block2', '.block3', '.block4', '.block5', '.block6', '.block7'];
+    blockClasses.forEach(blockClass => {
+        const blocks = document.querySelectorAll(blockClass);
+
+        blocks.forEach(block => {
+            block.style.boxShadow = `
+                inset ${0}px ${gameHeight / 275}px ${gameHeight / 137}px rgba(0, 0, 0, 0.2),
+                inset ${0}px ${(0 - gameHeight) / 275}px ${gameHeight / 137}px rgba(255, 255, 255, 0.2),
+                ${gameHeight / 410}px ${gameHeight / 410}px ${gameHeight / 137}px rgba(0, 0, 0, 0.2)
+            `;
+        });
+    });
 }
 
 function drawBlock(table, block, gameHeight, tileHeight) {
