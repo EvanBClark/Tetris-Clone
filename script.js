@@ -63,13 +63,13 @@ let perfectClearBackToBack = false;
 let messages = [];
 let drawnMessages = [];
 let moveDelay = 0;
-let fpsTime = 0;
 let dropTime = 0;
+let softDropTime = 0;
+let softDropSpeed = 50;
 let lockDownTime = 0;
 let lastMoveTime = 0;
-const fps = 60;
-const interval = 1000 / fps;
 let dropRate = 1000;
+let tileHeight;
 const keys = {
     'moveLeft': false,
     'moveRight': false,
@@ -82,40 +82,42 @@ const keys = {
 
 startGame();
 
-requestAnimationFrame(gameLoop);
+MainLoop.setUpdate(gameLoop).setMaxAllowedFPS(60).start();
 
-function gameLoop(timestamp) {
-    const deltaTime = timestamp - fpsTime;
+function gameLoop(deltaTime) {
+
+    if (gameOver) {
+        return;
+    }
+
     dropTime += deltaTime;
+    softDropTime += deltaTime;
     lastMoveTime += deltaTime;
 
-    if (deltaTime >= interval) {
-        fpsTime = timestamp - (deltaTime % interval);
-        if (canBlockDrop()) {
-            if (lockDown) {
-                lockDown = false;
-                dropTime = 0;
-            }
-        } else {
-            if (!lockDown) {
-                lockDown = true;
-                lockDownTime = 0;
-            }
+    if (canBlockDrop()) {
+        if (lockDown) {
+            lockDown = false;
+            dropTime = 0;
         }
-        
-        if (lockDownCount >= 15) {
-            if (canBlockDrop()) {
-                dropBlock();
-            } else {
-                lockDown = false;
-                lockDownCount = 0;
-                dropTime = 0;
-                clearLines();
-                spawnBlock();
-            }
+    } else {
+        if (!lockDown) {
+            lockDown = true;
+            lockDownTime = 0;
         }
-        drawGame();
     }
+    
+    if (lockDownCount >= 15) {
+        if (canBlockDrop()) {
+            dropBlock();
+        } else {
+            lockDown = false;
+            lockDownCount = 0;
+            dropTime = 0;
+            clearLines();
+            spawnBlock();
+        }
+    }
+    drawGame();
 
     if (dropTime >= dropRate) {
         dropTime -= dropRate;
@@ -124,8 +126,8 @@ function gameLoop(timestamp) {
         }
     }
 
-    if (keys.moveDown && dropTime >= 50) {
-        dropTime -= 50;
+    if (keys.moveDown && dropTime >= softDropSpeed) {
+        dropTime = 0;
         if (!lockDown) {
             dropBlock();
             score += 1;
@@ -178,10 +180,6 @@ function gameLoop(timestamp) {
         }
         canHold = false;
         blockRotation = 0;
-    }
-
-    if (!gameOver) {
-        requestAnimationFrame(gameLoop);
     }
 }
 
@@ -696,6 +694,7 @@ function drawGame() {
     const previewBoard = getDropPreview();
     const width = window.innerWidth;
     const height = window.innerHeight;
+    document.body.style.height = height + 'px';
     let gameWidth;
     if (width > height) {
         gameWidth = height;
@@ -703,27 +702,24 @@ function drawGame() {
         gameWidth = width;
     }
     let gameHeight = gameWidth;
-    let tileHeight = gameWidth / 23;
+    tileHeight = gameWidth / 23;
     const borderWidth = gameHeight / 400;
 
     let verticalDisplay = false;
-    if (window.innerHeight > window.innerWidth * 1.45) {
+    if (height > width * 1.45) {
         verticalDisplay = true;
-        // document.getElementById('left-column').style.order = 3;
         document.getElementById('next').append(document.getElementById('hold-div'));
         document.getElementById('next').append(document.getElementById('stats'));
         document.getElementById('left-column').style.display = 'none';
         document.getElementById('board').style.marginLeft = tileHeight / 3 + 'px';
         tileHeight = gameWidth / 14.6;
-        gameHeight = gameHeight * 1.4;
+        gameHeight = gameHeight * 1.45;
     } else {
         document.getElementById('left-column').append(document.getElementById('hold-div'));
         document.getElementById('left-column').append(document.getElementById('stats'));
         document.getElementById('left-column').style.display = 'block';
         document.getElementById('board').style.marginLeft = 0;
     }
-
-
 
     const game = document.getElementById('game');
     game.style.height = gameHeight + 'px';
@@ -740,6 +736,9 @@ function drawGame() {
             td.style.border = borderWidth  + 'px solid';
             td.style.borderColor = 'rgb(35, 35, 35)';
             td.style.borderRadius = tileHeight / 5 + 'px';
+            td.addEventListener('touchstart', handleTouchStart);
+            td.addEventListener('touchmove', handleTouchMove);
+            td.addEventListener('touchend', handleTouchEnd);
             tr.append(td);
         }
         table.append(tr);
@@ -751,15 +750,12 @@ function drawGame() {
     next.style.height = gameHeight * .9 + 'px';
     next.style.width = gameWidth / 3.7 + 'px';
 
-
     if (verticalDisplay) {
         next.style.height = gameHeight * .98 + 'px';
         gameHeight = gameWidth;
         tileHeight = gameWidth / 23;
     }
     
-
-
     const holdTableDiv = document.getElementById('hold-table-div');
     roundMarginify(holdTableDiv, tileHeight);
     holdTableDiv.style.height = holdTableDiv.clientWidth + 'px';
@@ -797,7 +793,12 @@ function drawGame() {
         drawBlock(nextTable, block, gameHeight, tileHeight)
     }
     const colors = ['cyan', 'blue', 'orange', '#FAFA33', 'green', 'purple', 'red'];
-    const w = tileHeight / 12;
+    let w;
+    if (verticalDisplay) {
+        w = gameWidth / 14.6 / 12;
+    } else {
+        w = tileHeight / 12;
+    }
     for (let i = 0; i < 7; i++) {
         const outline = 'linear-gradient(to right, ' + colors[i] + ' ' + w + 'px, transparent ' + w + 'px) top,' +
         'linear-gradient(to left, ' + colors[i] + ' ' + w + 'px, transparent ' + w + 'px) bottom,' +
@@ -864,6 +865,7 @@ function drawGame() {
             i--;
         }
     }
+
     const blockClasses = ['.block1', '.block2', '.block3', '.block4', '.block5', '.block6', '.block7'];
     blockClasses.forEach(blockClass => {
         const blocks = document.querySelectorAll(blockClass);
@@ -876,6 +878,10 @@ function drawGame() {
             `;
         });
     });
+
+    window.addEventListener('touchstart', handleTouchStart);
+    window.addEventListener('touchmove', handleTouchMove);
+    window.addEventListener('touchend', handleTouchEnd);
 }
 
 function drawBlock(table, block, gameHeight, tileHeight) {
@@ -908,3 +914,87 @@ function roundMarginify(elem, tileHeight) {
     elem.style.marginRight = tileHeight / 2.3 + 'px';
     elem.style.borderRadius = tileHeight / 2.3 + 'px';
 }
+
+
+window.addEventListener('blur', () => {
+    MainLoop.stop();
+});
+
+window.addEventListener('focus', () => {
+    MainLoop.start();
+});
+
+
+
+
+
+
+let touchStartTime;
+let touchStartX = 0;
+let touchStartY = 0;
+let touchEndX = 0;
+let touchEndY = 0;
+let touchMovement = 0;
+
+function handleTouchStart(event) {
+    touchStartTime = Date.now();
+    touchStartX = event.touches[0].clientX;
+    touchStartY = event.touches[0].clientY;
+    touchEndX = event.touches[0].clientX;
+    touchEndY = event.touches[0].clientY;
+    touchMovement = 0;
+    
+}
+
+function handleTouchMove(event) {
+    touchEndX = event.touches[0].clientX;
+    touchEndY = event.touches[0].clientY;
+    const moveX = touchEndX - touchStartX;
+    const moveY = touchEndY - touchStartY;
+
+    movementWidth = tileHeight * 1.5;
+
+
+
+    if (Math.abs(moveX) >= Math.abs(moveY)) {
+        if (moveX > touchMovement + movementWidth) {
+            touchMovement += movementWidth;
+            move('right');
+        } else if (moveX < touchMovement - movementWidth) {
+            touchMovement -= movementWidth;
+            move('left');
+        }
+    } else {
+        if (moveY > movementWidth * 3) {
+            keys.moveDown = true;
+        } else {
+            keys.moveDown = false;
+        }
+    }
+
+
+
+    
+ 
+    
+
+    
+}
+
+function handleTouchEnd() {
+    const moveX = touchEndX - touchStartX;
+    const moveY = touchEndY - touchStartY;
+    keys.moveDown = false;
+
+    // score = moveY;
+
+    // if (moveY > tileHeight * 5) {
+    //     fullDrop();
+    // }
+    
+}
+
+
+window.addEventListener('click', () => {
+    rotate('left');
+});
