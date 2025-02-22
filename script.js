@@ -934,7 +934,10 @@ let touchStartX = 0;
 let touchStartY = 0;
 let touchEndX = 0;
 let touchEndY = 0;
-let touchMovement = 0;
+let lastTouchEndX = 0;
+let LastTouchEndY = 0;
+let movementX = 0;
+let movementY = 0;
 
 function handleTouchStart(event) {
     touchStartTime = Date.now();
@@ -942,49 +945,78 @@ function handleTouchStart(event) {
     touchStartY = event.touches[0].clientY;
     touchEndX = event.touches[0].clientX;
     touchEndY = event.touches[0].clientY;
-    touchMovement = 0;
-    
+    LastTouchEndX = event.touches[0].clientX;
+    LastTouchEndY = event.touches[0].clientY;
 }
 
 function handleTouchMove(event) {
+    lastTouchEndX = touchEndX;
+    lastTouchEndy = touchEndY
     touchEndX = event.touches[0].clientX;
     touchEndY = event.touches[0].clientY;
-    const moveX = touchEndX - touchStartX;
-    const moveY = touchEndY - touchStartY;
+    const moveX = touchEndX - lastTouchEndX;
+    const moveY = touchEndY - lastTouchEndy;
+
+
+    score = movementX + ', ' + movementY;
+
 
     movementWidth = tileHeight * 1.5;
 
-
-
+    
     if (Math.abs(moveX) >= Math.abs(moveY)) {
-        if (moveX > touchMovement + movementWidth) {
-            touchMovement += movementWidth;
+        movementX += moveX;
+        
+        // movementY = 0;
+        if (movementX > movementWidth) {
             move('right');
-        } else if (moveX < touchMovement - movementWidth) {
-            touchMovement -= movementWidth;
+            movementX -= movementWidth;
+        } else if (movementX < -movementWidth) {
             move('left');
+            movementX += movementWidth;
         }
     } else {
-        if (moveY > movementWidth * 3) {
+        movementY += moveY;
+        if (movementY > movementWidth * 1.5) {
             keys.moveDown = true;
-        } else {
+        }
+        if (moveY < 0) {
             keys.moveDown = false;
+            movementY = 0;
         }
     }
 
+   
+   
+   
+   
+   
+   
+   
+    // TODO: Add time condition below
+
+    
 
 
     
- 
-    
 
-    
+
+
+
+
+
+
 }
 
 function handleTouchEnd() {
+    movementX = 0;
+    movementY = 0;
+    keys.moveDown = false;
+
+
     const moveX = touchEndX - touchStartX;
     const moveY = touchEndY - touchStartY;
-    keys.moveDown = false;
+    
 
     // score = moveY;
 
