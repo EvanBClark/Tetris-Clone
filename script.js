@@ -178,6 +178,7 @@ function gameLoop(deltaTime) {
             blockCoord = [3, 3];
             dropTime = 0;
         }
+        keys.hold = false;
         canHold = false;
         blockRotation = 0;
     }
@@ -759,6 +760,9 @@ function drawGame() {
     const holdTableDiv = document.getElementById('hold-table-div');
     roundMarginify(holdTableDiv, tileHeight);
     holdTableDiv.style.height = holdTableDiv.clientWidth + 'px';
+    holdTableDiv.addEventListener('click', () => {
+        keys.hold = true;
+    })
     const holdTable = document.getElementById('hold-table');
     holdTable.innerHTML = '';
     holdTable.style.transform = '';
@@ -830,32 +834,38 @@ function drawGame() {
     linesElem.style.marginTop = gameHeight / 100 + 'px';
     roundMarginify(linesElem, tileHeight);
 
-    if (messages.length > 0) {
-        const drawnMessage = [0]
+   if (messages.length > 0) {
+        const drawnMessage = [0];
         for (let i = 0; i < messages.length; i++) {
             drawnMessage.push(messages[i]);
         }
-        drawnMessages.push(drawnMessage)
+        drawnMessages.push(drawnMessage);
         messages = [];
     }
     document.querySelectorAll('.message').forEach(elem => elem.remove());
     for (let i = 0; i < drawnMessages.length; i++) {
+        let messageFontSize = gameHeight / 30;
         const messagesDiv = document.createElement('div');
         messagesDiv.style.position = 'fixed';
         messagesDiv.classList.add('message');
         messageY = (10 - drawnMessages[i][drawnMessages[i].length - 1]) * (tileHeight + borderWidth);
-        messagesDiv.style.bottom = (window.innerHeight / 2) + messageY + 'px';
+        if (verticalDisplay) {
+            messageY -= tileHeight * 5.25;
+            messagesDiv.style.transform = 'translateX(-' + tileHeight * 3 + 'px)';
+            messageFontSize = gameHeight / 20;
+        }
+        messagesDiv.style.bottom = (height / 2) + messageY + 'px';
         for (let k = 1; k < drawnMessages[i].length - 1; k++) {
             const p = document.createElement('p');
             p.innerText = drawnMessages[i][k];
-            p.style.fontSize = gameHeight / 30 + 'px';
+            p.style.fontSize = messageFontSize + 'px';
             if (drawnMessages[i][0] < 10) {
                 p.style.opacity = drawnMessages[i][0] / 10;
-                p.style.fontSize = (gameHeight / 30 * (drawnMessages[i][0] / 10)) + 'px';
+                p.style.fontSize = (messageFontSize * (drawnMessages[i][0] / 10)) + 'px';
             } else if (drawnMessages[i][0] > 20) {
                 p.style.opacity = (30 - drawnMessages[i][0]) / 10;
             }
-            p.style.transform = 'translateY(-' + (drawnMessages[i][0] * 4) + 'px)';
+            p.style.transform = 'translateY(-' + (drawnMessages[i][0] * tileHeight / 10) + 'px)';
             messagesDiv.append(p);
         }
         document.getElementById('game').append(messagesDiv);
@@ -929,7 +939,6 @@ window.addEventListener('focus', () => {
 
 
 
-let touchStartTime;
 let touchStartX = 0;
 let touchStartY = 0;
 let touchEndX = 0;
@@ -938,15 +947,17 @@ let lastTouchEndX = 0;
 let LastTouchEndY = 0;
 let movementX = 0;
 let movementY = 0;
+let lastSwipe = 0;
+const yMovements = [];
 
 function handleTouchStart(event) {
-    touchStartTime = Date.now();
     touchStartX = event.touches[0].clientX;
     touchStartY = event.touches[0].clientY;
     touchEndX = event.touches[0].clientX;
     touchEndY = event.touches[0].clientY;
     LastTouchEndX = event.touches[0].clientX;
     LastTouchEndY = event.touches[0].clientY;
+    yMovements = [];
 }
 
 function handleTouchMove(event) {
@@ -956,9 +967,11 @@ function handleTouchMove(event) {
     touchEndY = event.touches[0].clientY;
     const moveX = touchEndX - lastTouchEndX;
     const moveY = touchEndY - lastTouchEndy;
+    let recentYMovement = 0;
+    
 
 
-    score = movementX + ', ' + movementY;
+    // score = movementX + ', ' + movementY;
 
 
     movementWidth = tileHeight * 1.5;
@@ -977,35 +990,26 @@ function handleTouchMove(event) {
         }
     } else {
         movementY += moveY;
-        if (movementY > movementWidth * 1.5) {
+        yMovements.push([Date.now(), movementY]);
+
+
+        for (let i = 0; i < yMovements.length; i++) {
+            if (yMovements[i][0] > Date.now() - 500) {
+                recentYMovement = movementY - yMovements[i][1];
+                break;
+            }
+        }
+
+
+        if (recentYMovement > movementWidth) {
             keys.moveDown = true;
+            lastSwipe = Date.now();
         }
         if (moveY < 0) {
             keys.moveDown = false;
             movementY = 0;
         }
     }
-
-   
-   
-   
-   
-   
-   
-   
-    // TODO: Add time condition below
-
-    
-
-
-    
-
-
-
-
-
-
-
 }
 
 function handleTouchEnd() {
@@ -1013,17 +1017,14 @@ function handleTouchEnd() {
     movementY = 0;
     keys.moveDown = false;
 
+    if (lastSwipe + 20 > Date.now()) {
+        fullDrop();
+    }
 
-    const moveX = touchEndX - touchStartX;
-    const moveY = touchEndY - touchStartY;
-    
 
-    // score = moveY;
 
-    // if (moveY > tileHeight * 5) {
-    //     fullDrop();
-    // }
-    
+
+
 }
 
 
