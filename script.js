@@ -925,7 +925,6 @@ function roundMarginify(elem, tileHeight) {
     elem.style.borderRadius = tileHeight / 2.3 + 'px';
 }
 
-
 window.addEventListener('blur', () => {
     MainLoop.stop();
 });
@@ -933,11 +932,6 @@ window.addEventListener('blur', () => {
 window.addEventListener('focus', () => {
     MainLoop.start();
 });
-
-
-
-
-
 
 let touchStartX = 0;
 let touchStartY = 0;
@@ -968,19 +962,9 @@ function handleTouchMove(event) {
     const moveX = touchEndX - lastTouchEndX;
     const moveY = touchEndY - lastTouchEndy;
     let recentYMovement = 0;
-    
-
-
-    // score = movementX + ', ' + movementY;
-
-
     movementWidth = tileHeight * 1.5;
-
-    
     if (Math.abs(moveX) >= Math.abs(moveY)) {
         movementX += moveX;
-        
-        // movementY = 0;
         if (movementX > movementWidth) {
             move('right');
             movementX -= movementWidth;
@@ -991,16 +975,12 @@ function handleTouchMove(event) {
     } else {
         movementY += moveY;
         yMovements.push([Date.now(), movementY]);
-
-
         for (let i = 0; i < yMovements.length; i++) {
             if (yMovements[i][0] > Date.now() - 500) {
                 recentYMovement = movementY - yMovements[i][1];
                 break;
             }
         }
-
-
         if (recentYMovement > movementWidth) {
             keys.moveDown = true;
             lastSwipe = Date.now();
@@ -1016,17 +996,10 @@ function handleTouchEnd() {
     movementX = 0;
     movementY = 0;
     keys.moveDown = false;
-
     if (lastSwipe + 20 > Date.now()) {
         fullDrop();
     }
-
-
-
-
-
 }
-
 
 window.addEventListener('click', () => {
     rotate('left');

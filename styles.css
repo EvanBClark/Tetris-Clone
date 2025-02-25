@@ -1,3 +1,7 @@
+html, body {
+    overscroll-behavior: none;
+}
+
 body {
     background-color: rgb(35, 35, 35);
     font-family: Arial, Helvetica, sans-serif;
@@ -5,7 +9,6 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    overscroll-behavior: none;
 }
 
 #game {
